@@ -19,10 +19,8 @@ namespace Wesley.Crawler.SimpleCrawler
         {
             //读取已下载的主题
             ReadDownedTitles();
-            CityCrawler();
-
-            //2.抓取酒店
-            //HotelCrawler();
+            //开始爬取日记
+            NoteCrawler();
 
             //3.并发抓取示例
             //ConcurrentCrawler();
@@ -44,13 +42,13 @@ namespace Wesley.Crawler.SimpleCrawler
 
 
         /// <summary>
-        /// 抓取豆瓣指定用户
+        /// 抓取豆瓣指定用户的日记
         /// </summary>
-        public static void CityCrawler()
+        public static void NoteCrawler()
         {
 
             var url = "https://www.douban.com/people/85362438/notes?start=20&type=note&_i=6055391O1Afa0-";
-            //"https://www.douban.com/people/85362438/notes?_i=5851926O1Afa0-";//定义爬虫入口URL
+            //"https://www.douban.com/people/85362438/notes?_i=5851926O1Afa0-";//定义爬虫入口日记URL
             var cityCrawler = new SimpleCrawler();//调用刚才写的爬虫程序
             cityCrawler.OnStart += (s, e) =>
             {
@@ -96,7 +94,7 @@ namespace Wesley.Crawler.SimpleCrawler
             cityCrawler.Start(new Uri(url)).Wait();
         }
 
-        //保存到txt文件
+        //保存到文件
         private static void SaveTxt(Notes notes)
         {
             YFPos.Utils.FileOperHelper.WriteFile(fileName, $"[Title]{notes.Title}");
@@ -146,50 +144,6 @@ namespace Wesley.Crawler.SimpleCrawler
 
             return string.Empty;
         }
-
-
-
-        /// <summary>
-        /// 抓取酒店列表
-        /// </summary>
-        public static void HotelCrawler()
-        {
-            var hotelUrl = "http://hotels.ctrip.com/hotel/zunyi558";
-            var hotelList = new List<Hotel>();
-            var hotelCrawler = new SimpleCrawler();
-            hotelCrawler.OnStart += (s, e) =>
-            {
-                Console.WriteLine("爬虫开始抓取地址：" + e.Uri.ToString());
-            };
-            hotelCrawler.OnError += (s, e) =>
-            {
-                Console.WriteLine("爬虫抓取出现错误：" + e.Uri.ToString() + "，异常消息：" + e.Exception.Message);
-            };
-            hotelCrawler.OnCompleted += (s, e) =>
-            {
-                var links = Regex.Matches(e.PageSource, @"""><a[^>]+href=""*(?<href>/hotel/[^>\s]+)""\s*data-dopost[^>]*><span[^>]+>.*?</span>(?<text>.*?)</a>", RegexOptions.IgnoreCase);
-                foreach (Match match in links)
-                {
-                    var hotel = new Hotel
-                    {
-                        HotelName = match.Groups["text"].Value,
-                        Uri = new Uri("http://hotels.ctrip.com" + match.Groups["href"].Value
-                    )
-                    };
-                    if (!hotelList.Contains(hotel)) hotelList.Add(hotel);//将数据加入到泛型列表
-                    Console.WriteLine(hotel.HotelName + "|" + hotel.Uri);//将酒店名称及详细页URL显示到控制台
-                }
-
-                Console.WriteLine();
-                Console.WriteLine("===============================================");
-                Console.WriteLine("爬虫抓取任务完成！合计 " + links.Count + " 个酒店。");
-                Console.WriteLine("耗时：" + e.Milliseconds + "毫秒");
-                Console.WriteLine("线程：" + e.ThreadId);
-                Console.WriteLine("地址：" + e.Uri.ToString());
-            };
-            hotelCrawler.Start(new Uri(hotelUrl)).Wait();//没被封锁就别使用代理：60.221.50.118:8090
-        }
-
 
         /// <summary>
         /// 并发抓取示例
